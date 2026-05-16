@@ -1368,19 +1368,29 @@ const CONFIG = {
 // ══════════════════════════════════════════════════════════════
 async function api(action, body = {}) {
   const token = sessionGet('token');
-  const isGet = ['getAll','getUsers'].includes(action);
   try {
-    let res;
-    if (isGet) {
-      const params = new URLSearchParams({ action, token: token || '' });
-      res = await fetch(CONFIG.API_URL + '?' + params);
-    } else {
-      res = await fetch(CONFIG.API_URL, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ action, token: token || '', ...body }),
-      });
+    const params = new URLSearchParams({ action, token: token || '', ...flattenForGet(body) });
+    const res = await fetch(CONFIG.API_URL + '?' + params);
+    const json = await res.json();
+    if (!json.ok) {
+      if (json.code === 'session_expired') { handleSessionExpired(); return null; }
+      throw new Error(json.error || 'API error');
     }
+    return json.data;
+  } catch (e) {
+    console.error('API error [' + action + ']:', e);
+    throw e;
+  }
+}
+
+function flattenForGet(obj) {
+  const out = {};
+  for (const [k, v] of Object.entries(obj)) {
+    if (v === null || v === undefined) continue;
+    out[k] = typeof v === 'object' ? JSON.stringify(v) : v;
+  }
+  return out;
+}
     const json = await res.json();
     if (!json.ok) {
       if (json.code === 'session_expired') {
