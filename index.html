@@ -2179,6 +2179,7 @@ async function loadAllData() {
     id: f.filingId || f.id,
     client: f.clientId || f.client,
     penDay: +(f.penDay) || 0,
+    due: f.due ? String(f.due).slice(0, 10) : f.due,
   }));
 
   // Meetings — convert to object keyed by clientId, array of meetings per client
